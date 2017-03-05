@@ -61,16 +61,6 @@ try:
     ambient_light = sum(ldr_readings(pin_to_circuit, 5))/5
     print "Calibrated! Ambient light is at %d" %ambient_light
 
-    # print "Turn off the lights, Kathie!"
-    # print "Now shine the light for 5 seconds on the LDR to calibrate it..."
-    # time.sleep(5)
-    # if (ldr_reading(pin_to_circuit)) < trigger:
-    #     print "Calibrated!"
-    #     time.sleep(1.5)
-    # else:
-    #     print "Calibration failed :("
-    #     sys.exit()
-
     morse_code = ""
     while True:
         if (ldr_reading(pin_to_circuit) < trigger): 
