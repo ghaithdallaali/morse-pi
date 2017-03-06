@@ -32,7 +32,12 @@ GPIO.setmode(GPIO.BOARD)
 
 #define the pin that goes to the circuit
 pin_to_circuit = 7 # pin ldr is connected to
-trigger = 500 # min threshhold before we record a dot/dash
+trigger_tol = 250
+ambient_light_tol = 300
+num_readings = 4
+delimiter = '/'
+dit = '.'
+dah = '-'
 
 def ldr_reading (pin_to_circuit):
     count = 0
@@ -68,43 +73,45 @@ def morse_translator (morse_code):
             '.--.'  : 'P',  '--.-' : 'Q' ,    '.-.'     : 'R' ,
             '...'   : 'S',  '-'    : 'T' ,    '..-'     : 'U' ,
             '...-'  : 'V',  '.--'  : 'W' ,    '-..-'    : 'X' ,
-            '-.--'  : 'Y',  '--..' : 'Z'
+            '-.--'  : 'Y',  '--..' : 'Z' ,    '.....'   : ' ' ,
         }
 
-    for char in morse_code.split('/'):
+    for char in morse_code.split(delimiter):
         if char in CODE:
-            print CODE[char.upper()],
+            print '\033[93m' + CODE[char.upper()],
 #Catch when script is interrupted, cleanup correctly
 try:
     # Main loop
-    ambient_light = sum(ldr_readings(pin_to_circuit, 5))/5
+    ambient_light = sum(ldr_readings(pin_to_circuit, num_readings))/num_readings
     print "Calibrated! Ambient light is at %d" %ambient_light
-
+    trigger = ambient_light - trigger_tol
+    # print "trigger:" + str(trigger) + " ambient_light:" + str(ambient_light) ;# GHAITH DEBUG
     morse_code = ""
     while True:
-        if (ldr_reading(pin_to_circuit) < trigger): 
-            readings = ldr_readings(pin_to_circuit,4)
-            for x in xrange(0,4):
-                if (readings[x] < trigger):
+        if (ldr_reading(pin_to_circuit) <= trigger): 
+            readings = ldr_readings(pin_to_circuit,num_readings)
+            for x in xrange(0,num_readings):
+                if (readings[x] <= trigger):
                     readings[x] = 1
                 else:
                     readings[x] = 0
-            if sum(readings) >= 3:
-                morse_code+="-"
-                sys.stdout.write('-')
+            if sum(readings) >= (num_readings - 1):
+                morse_code+=dah
+                sys.stdout.write(dah)
                 time.sleep(0.50)
-            elif 1<= sum(readings) <= 2 :
-                morse_code+="."
-                sys.stdout.write('.')
+            elif 1 <= sum(readings) <= (num_readings/2) :
+                morse_code+=dit
+                sys.stdout.write(dit)
                 time.sleep(0.50)
-        elif (ldr_reading(pin_to_circuit) >= (ambient_light + 50)) :
-                morse_code+="/"
-                sys.stdout.write('/')
+        elif (ldr_reading(pin_to_circuit) >= (ambient_light + ambient_light_tol)) :
+                morse_code+=delimiter
+                sys.stdout.write(delimiter)
                 time.sleep(0.70)
         sys.stdout.flush()
 except KeyboardInterrupt:
-    print "\n"
+    print "\n\n"
     morse_translator(morse_code)
+    print "\n\n"
     pass
 finally:
     GPIO.cleanup()
